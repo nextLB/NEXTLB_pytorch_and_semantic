@@ -1,5 +1,9 @@
-import os
 
+"""
+    本文件程序是基于最简单的手写识别体所编写的程序，主要用于理解最经典的CNN架构
+"""
+
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -105,6 +109,7 @@ def visualize_feature_maps(feature_maps, layer_name):
             # 将1D向量重塑为2D图像
             # 找到最接近平方数的尺寸
             vector_length = feature_maps[i].shape[0]
+
             side_length = int(np.sqrt(vector_length))
 
             # 如果向量长度不是完全平方数，使用零填充
@@ -123,6 +128,7 @@ def visualize_feature_maps(feature_maps, layer_name):
 
             # 应用viridis色彩映射
             colored_feature = viridis_cmap(feature_map_2d)
+
             print(colored_feature.shape)
 
             colored_feature_rgb = (colored_feature[:, :, :3] * 255).astype(np.uint8)
@@ -132,6 +138,7 @@ def visualize_feature_maps(feature_maps, layer_name):
 
             # 保存图像
             savePath = os.path.join(saveFeaturePicturePath, f"{layer_name}_batch_{i}.png")
+
             img.save(savePath)
 
 
@@ -245,7 +252,8 @@ for epoch in range(num_epochs):
         # 前向传播
         outputs = model(images)
         if batchIndex == 0:
-        # 可视化并保存不同阶段的特征图
+
+        # 可视化并保存模型不同阶段的特征图
             visualize_feature_maps(
                 model.feature_maps_before_conv1,
                 'conv1_before'
