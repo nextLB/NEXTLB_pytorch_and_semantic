@@ -47,10 +47,45 @@ def save_feature_maps(featureMaps: torch.Tensor, layerName: str, outputDir: str,
     os.makedirs(outputDir, exist_ok=True)
     colorMap = cm.get_cmap(cmap)
 
+    # 逐批次的取出
     for index in range(len(featureMaps)):
         tempOutputDir = os.path.join(outputDir, f'image_{index}')
         os.makedirs(tempOutputDir, exist_ok=True)
-        
+        # detach() 方法的作用是将当前张量从计算图中 “分离” 出来，使其不再跟踪梯度（即后续操作不会影响反向传播）。
+        feature = featureMaps[index].detach().cpu().float()
+
+        # 对特征图进行逐个通道的取出
+        for channelIdx in range(min(feature.shape[0], maxChannels)):
+            channelData = feature[channelIdx]
+
+            # 归一化到[0, 1]
+            minVal = channelData.min()
+            channelData = channelData - minVal
+            maxVal = channelData.max()
+            if maxVal > 0:  # 避免除以0
+                channelData = channelData / maxVal
+
+            # 应用颜色映射
+            # 应用颜色映射后，正常情况下会有四通道维度，RGBA
+            coloredData = colorMap(channelData.numpy())
+
+            # 检查 coloredData的维度并进行相应的处理
+            # 当此时变换后的数据只有两个维度，说明数据是一维的
+            if coloredData.ndim == 2:
+                # 如果是二维数据，则将其转换为三维数据 [H, W, C]
+                # 这里假设 coloredData 的形状是 [484, 4], 表示484个位置，每个位置有4个值 (RGBA)
+                # 我们需要将其重塑为 [484, 1, 4] 或 [1, 484, 4], 然后转换为RGB图像
+                coloredData = coloredData.reshape((coloredData.shape[0], 1, coloredData.shape[1]))
+
+                coloredData = (coloredData[:, :, :3] * 255).astype(np.uint8)    # 取前3通道 (RGB) 并转为整数
+
+            else:
+                coloredData = (coloredData[:, :, :3] * 255).astype(np.uint8)    # 取前3通道 (RGB) 并转为整数
+
+            # 转换为PIL图像并保存
+            img = Image.fromarray(coloredData)
+            savePath = os.path.join(tempOutputDir, f"{layerName}_channel_{channelIdx}_color.png")
+            img.save(savePath)
 
 
 
