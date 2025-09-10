@@ -1,0 +1,7 @@
+
+
+S_S_HEIGHT = 320
+S_S_WIDTH = 320
+
+
+

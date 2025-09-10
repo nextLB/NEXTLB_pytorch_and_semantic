@@ -8,6 +8,15 @@ import re
 import shutil
 import matplotlib.pyplot as plt
 import config_path
+import gc
+from typing import List
+
+
+
+
+
+
+
 
 # The minimum value is selected and its subscript in the original array is returned
 def get_min_value(Array):
@@ -66,7 +75,7 @@ def clear_folder(folderPath: str):
     print(f"文件夹 {folderPath} 内容已清空")
 
 
-def save_S_S_transformer_datasets(batchIndex, index, image, mask):
+def save_S_S_transformer_datasets(batchIndex, index, image, mask) -> None:
     # 创建画布
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
@@ -96,7 +105,7 @@ def save_S_S_transformer_datasets(batchIndex, index, image, mask):
     )
 
 
-def save_pretrained_transformer_datasets(originalImg, augmentedImg, cropIndex, batchIndex, savePath, batchNumber):
+def save_pretrained_transformer_datasets(originalImg, augmentedImg, cropIndex, batchIndex, savePath, batchNumber) -> None:
     # 创建画布
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     # 转换通道维度
@@ -112,4 +121,67 @@ def save_pretrained_transformer_datasets(originalImg, augmentedImg, cropIndex, b
     print('originalImages.shape: ', originalImg.shape)
     print('augmentedImages.shape: ', augmentedImg.shape)
     plt.tight_layout()
+    # 保存图像
+    fullPath = os.path.join(savePath, f'comparison_batchI_{batchIndex}_batchN_{batchNumber}_cropI_{cropIndex}.png')
+    plt.savefig(fullPath, dpi=300, bbox_inches='tight')
+    print(f'图像已经保存至: {fullPath}')
+    # 释放内存
+    plt.close(fig)
+    gc.collect()
+
+
+
+# 绘制训练图像
+def draw(trainLosses, valLosses, valIous, savePath) -> None:
+    # 绘制训练曲线
+    plt.figure(figsize=(15, 5))
+
+    plt.subplot(1, 2, 1)
+    plt.subplot(1, 2, 1)
+    plt.plot(trainLosses, label='train loss')
+    plt.plot(valLosses, label='val loss')
+    plt.title('train and val losses')
+    plt.xlabel('Epoch')
+    plt.ylabel('losses')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(valIous, label='valIou', color='green')
+    plt.title('valIou')
+    plt.xlabel('Epoch')
+    plt.ylabel('Iou')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(savePath, 'train_metric.png'))
+    print("save picture over")
+
+
+
+
+# 对制定文件夹下的图片按文件名中的数字进行排序，以便后续的遍历操作
+def sort_images_by_number(folderPath: str) -> List[str]:
+    # 支持的图片文件扩展名
+    imageExtensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff')
+
+    # 获取文件夹中所有的图片文件
+    imageFiles = [
+        f for f in os.listdir(folderPath)
+        if f.lower().endswith(imageExtensions) and os.path.isfile(os.path.join(folderPath, f))
+    ]
+
+    def extract_number(filename: str) -> int:
+        # 使用正则表达式找到所有数字序列
+        numbers = re.findall(r'\d+', filename)
+        # 如果找到数字，返回第一个数字的整数形式
+        if numbers:
+            return int(numbers[0])
+        # 如果没有找到数字，返回一个很大的数放在最后
+        return float('inf')
+    
+    # 按提取的数字排序
+    sortedFiles = sorted(imageFiles, key=extract_number)
+
+    return sortedFiles
+
 
