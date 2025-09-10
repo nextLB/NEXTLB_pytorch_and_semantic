@@ -108,5 +108,8 @@ def save_pretrained_transformer_datasets(originalImg, augmentedImg, cropIndex, b
     ax1.axis('off')     # 关闭坐标轴
     ax2.imshow(augmentedImg, cmap='viridis')
     ax2.set_title(f'augmented image_{cropIndex}')
-    ax2.axis('off')
+    ax2.axis('off') # 关闭坐标轴
+    print('originalImages.shape: ', originalImg.shape)
+    print('augmentedImages.shape: ', augmentedImg.shape)
+    plt.tight_layout()
 
