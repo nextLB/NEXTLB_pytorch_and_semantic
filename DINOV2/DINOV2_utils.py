@@ -10,10 +10,9 @@ import matplotlib.pyplot as plt
 import config_path
 import gc
 from typing import List
+import torch
 
-
-
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 
@@ -35,6 +34,7 @@ def get_min_value(Array):
                 min_index = i
         return min_index
 
+
 # The maximum value is selected and its subscript in the original array is returned
 def get_max_value(Array):
     length = len(Array)
@@ -51,6 +51,7 @@ def get_max_value(Array):
                 max_value = Array[i]
                 max_index = i
         return max_index
+
 
 
 # 清空文件夹内的所有内容
@@ -73,6 +74,7 @@ def clear_folder(folderPath: str):
             print(f"删除 {itemPath} 时出错： {e}")
 
     print(f"文件夹 {folderPath} 内容已清空")
+
 
 
 def save_S_S_transformer_datasets(batchIndex, index, image, mask) -> None:
@@ -105,6 +107,7 @@ def save_S_S_transformer_datasets(batchIndex, index, image, mask) -> None:
     )
 
 
+
 def save_pretrained_transformer_datasets(originalImg, augmentedImg, cropIndex, batchIndex, savePath, batchNumber) -> None:
     # 创建画布
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -132,7 +135,7 @@ def save_pretrained_transformer_datasets(originalImg, augmentedImg, cropIndex, b
 
 
 # 绘制训练图像
-def draw(trainLosses, valLosses, valIous, savePath) -> None:
+def draw_train_picture(trainLosses, valLosses, valIous, savePath) -> None:
     # 绘制训练曲线
     plt.figure(figsize=(15, 5))
 
@@ -183,5 +186,38 @@ def sort_images_by_number(folderPath: str) -> List[str]:
     sortedFiles = sorted(imageFiles, key=extract_number)
 
     return sortedFiles
+
+
+
+
+# 计算语义分割多类别的Iou
+def calculate_iou(preds, targets, numClasses):
+    ious = []
+    preds = torch.argmax(preds, dim=1)
+
+    # 忽略背景类
+    presentClasses = 0
+    for cls in range(numClasses):
+        predInds = (preds == cls)
+        targetInds = (targets == cls)
+
+        # 如果目标中没有该类，则跳过
+        if targetInds.long().sum().item() == 0:
+            continue
+
+        intersection = (predInds & targetInds).long().sum().float()
+        union = (predInds | targetInds).long().sum().float()
+
+        if union > 0:
+            ious.append(intersection / union)
+            presentClasses += 1
+    
+    if presentClasses == 0:
+        return torch.tensor(0.0).to(device)
+    return torch.sum(torch.stack(ious)) / presentClasses
+
+
+
+
 
 
